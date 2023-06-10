@@ -17,6 +17,7 @@ router.get("/", async (req, res) => {
 // be sure to include its associated Products
 
 router.get("/:id", async (req, res) => {
+  console.log(req.params)
   try {
     const categories = await Category.findByPk(req.params.id, {
       include: [{ model: Product }],
