@@ -4,15 +4,35 @@ const { Product, Category, Tag, ProductTag } = require('../../models');
 // The `/api/products` endpoint
 
 // get all products
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   // find all products
   // be sure to include its associated Category and Tag data
+  try{
+    const getProducts = await Product.findAll({
+      include: [{ model : Category }, {model: Tag}],
+    });
+    res.status(200).json(getProducts);
+  } catch (err) {
+    res.status(500).json(err);
+  }
 });
 
 // get one product
-router.get('/:id', (req, res) => {
+router.get('/:id', async (req, res) => {
   // find a single product by its `id`
   // be sure to include its associated Category and Tag data
+  try{
+    const getProduct = await Product.findByPk (req.params.id, {
+      include: [{ model: Category }, { model: Tag }],
+    });
+    if (!getProduct) {
+      res.status(400).json({ message: "Product not found with that ID." });
+      return;
+    }
+    res.status(200).json(getProduct);
+  } catch (err) {
+    res.status(500).json(err);
+  }
 });
 
 // create new product
@@ -58,9 +78,9 @@ router.put('/:id', (req, res) => {
     .then((product) => {
       if (req.body.tagIds && req.body.tagIds.length) {
 
-        ProductTag.findAll({
-          where: { product_id: req.params.id }
-        }).then((productTags) => {
+        const productTag = ProductTag.findAll({
+          where: { product_id: req.params.id },
+        });
           // create filtered list of new tag_ids
           const productTagIds = productTags.map(({ tag_id }) => tag_id);
           const newProductTags = req.body.tagIds
@@ -81,7 +101,7 @@ router.put('/:id', (req, res) => {
             ProductTag.destroy({ where: { id: productTagsToRemove } }),
             ProductTag.bulkCreate(newProductTags),
           ]);
-        });
+        
       }
 
       return res.json(product);
@@ -92,8 +112,20 @@ router.put('/:id', (req, res) => {
     });
 });
 
-router.delete('/:id', (req, res) => {
+router.delete('/:id', async (req, res) => {
   // delete one product by its `id` value
+  try{
+    const productDelete = await Product.destroy({
+      where : { id: req.params.id},
+
+    });
+    if (!productDelete) {
+      res.status(400).json({ message : "Product was not found with the ID"});
+    } res.status(200).json(productDelete);
+  } catch (err) {
+    res.status(500).json(err);
+  }
+
 });
 
 module.exports = router;
